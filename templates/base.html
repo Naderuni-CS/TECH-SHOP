@@ -23,7 +23,7 @@
                 
                 {% if session.get('user') == 'admin' %}
                     <a href="/admin" class="nav-item">Admin Panel</a>
-                {% else %}
+                {% elif session.get('user') %}
                     <a href="/dashboard" class="nav-item">Dashboard</a>
                     <a href="/order-history" class="nav-item">My Orders</a>
                     <a href="/cart" class="nav-item cart-link">

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Your Cart - TechShop ERP{% endblock %}
+
+{% block content %}
+<h1>Shopping Cart 🛒</h1>
+
+{% if items %}
+<div class="cart-layout" style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <div class="cart-items-section">
+        <div class="cart-table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th style="text-align: right;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ item.name }}</td>
+                        <td>{{ item.category }}</td>
+                        <td style="text-align: right; color: var(--primary-color); font-weight: 700;">
+                            {{ "{:,.2f}".format(item.price) }} EGP
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 1rem;">
+            <a href="/products" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Continue Shopping
+            </a>
+        </div>
+    </div>
+
+    <div class="cart-summary-section">
+        <div class="cart-summary">
+            <h3 style="margin-bottom: 1.5rem;">Order Summary</h3>
+            
+            <div class="summary-row">
+                <span>Items ({{ items|length }})</span>
+                <span>{{ "{:,.2f}".format(total) }} EGP</span>
+            </div>
+            
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span style="color: var(--accent-green);">FREE</span>
+            </div>
+
+            <div class="summary-row total-row">
+                <span>Total</span>
+                <span>{{ "{:,.2f}".format(total) }} EGP</span>
+            </div>
+
+            <a href="/checkout" class="btn btn-primary btn-block" style="margin-top: 2rem; padding: 1rem;">
+                Proceed to Checkout <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="success-card" style="padding: 5rem 2rem;">
+    <i class="fas fa-shopping-cart fa-4x" style="color: #e2e8f0; margin-bottom: 2rem;"></i>
+    <h2>Your cart is empty</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Looks like you haven't added any premium tech yet.</p>
+    <a href="/products" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+{% endblock %}

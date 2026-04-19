@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - TechShop ERP{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>Admin Control Center ⚡</h1>
+    <p style="text-align: center; color: var(--text-muted);">Manage your shop's inventory and stock levels.</p>
+</div>
+
+<div class="admin-products-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem;">
+    <a href="/add-product" style="text-decoration: none;">
+        <div class="admin-card">
+            <i class="fas fa-plus-circle"></i>
+            <h3>Add New Product</h3>
+            <p>List new laptops or components in the shop.</p>
+        </div>
+    </a>
+
+    <a href="/admin-products" style="text-decoration: none;">
+        <div class="admin-card">
+            <i class="fas fa-boxes"></i>
+            <h3>Manage Inventory</h3>
+            <p>Update stock, edit details, or remove products.</p>
+        </div>
+    </a>
+
+    <a href="/view-orders" style="text-decoration: none;">
+        <div class="admin-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>View Orders</h3>
+            <p>Monitor customer purchases and delivery status.</p>
+        </div>
+    </a>
+</div>
+{% endblock %}

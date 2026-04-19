@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - TechShop ERP{% endblock %}
+
+{% block content %}
+<div class="product-details-container" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: start; margin-top: 2rem;">
+    <div class="product-image-section">
+        {% if product.image %}
+        <div style="background: white; padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow);">
+            <img src="{{ url_for('static', filename=product.image.replace('\\', '/').split('static/')[-1]) }}" 
+                 alt="{{ product.name }}" 
+                 style="width: 100%; height: auto; border-radius: 8px;">
+        </div>
+        {% else %}
+        <div style="height: 400px; display: flex; align-items: center; justify-content: center; background: #e2e8f0; color: #94a3b8; border-radius: var(--border-radius);">
+            <i class="fas fa-image fa-5x"></i>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="product-info-section">
+        <nav style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            <a href="/products" style="color: var(--primary-color); text-decoration: none;">Products</a> / {{ product.category }}
+        </nav>
+
+        <h1 style="text-align: left; margin-bottom: 1rem; font-size: 3rem;">{{ product.name }}</h1>
+        
+        <div class="product-price-large" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 2rem;">
+            {{ "{:,.2f}".format(product.price) }} EGP
+        </div>
+
+        <div class="product-meta" style="border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 1.5rem 0; margin-bottom: 2rem; display: flex; gap: 3rem;">
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Category</p>
+                <p style="font-weight: 600;">{{ product.category }}</p>
+            </div>
+            <div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Stock Status</p>
+                {% set stock_color = 'var(--accent-red)' if product.quantity <= 5 else 'var(--accent-green)' %}
+                <p style="font-weight: 600; color: {{ stock_color }};">
+                    {{ product.quantity }} available
+                </p>
+            </div>
+        </div>
+
+        <div class="product-description" style="margin-bottom: 3rem;">
+            <h3 style="margin-bottom: 1rem;">Description</h3>
+            <p style="line-height: 1.8; color: var(--text-color);">
+                {{ product.description or "No description provided for this item." }}
+            </p>
+        </div>
+
+        <div class="action-buttons" style="display: flex; gap: 1rem;">
+            {% if session.get('user') != 'admin' and product.quantity > 0 %}
+            <a href="/add-to-cart/{{ product.id }}" class="btn btn-primary" style="flex: 2; padding: 1.25rem;">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </a>
+            {% elif product.quantity <= 0 %}
+            <button class="btn" style="flex: 2; background: #e2e8f0; color: #94a3b8; cursor: not-allowed;" disabled>
+                Out of Stock
+            </button>
+            {% endif %}
+            
+            <a href="/products" class="btn btn-outline" style="flex: 1; padding: 1.25rem;">
+                Browse More
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

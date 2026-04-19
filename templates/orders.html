@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}View Orders - TechShop ERP{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Customer Orders 📦</h1>
+    <a href="/admin" class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i> Back to Admin
+    </a>
+</div>
+
+{% if orders %}
+<div class="cart-table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Total Price</th>
+                <th>Date</th>
+                <th>Shipping Address</th>
+                <th style="text-align: right;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>#ORD-{{ order.id }}</td>
+                <td style="font-weight: 600;">{{ order.username }}</td>
+                {% set display_total = "{:,.2f}".format(order.total_price) %}
+                <td style="color: var(--primary-color); font-weight: 700;">{{ display_total }} EGP</td>
+                <td>{{ order.created_at }}</td>
+                <td style="max-width: 250px; font-size: 0.9rem; color: var(--text-muted);">{{ order.address }}</td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                        {% set is_pending = order.status == 'Pending' %}
+                        {% set status_bg = '#fff7ed' if is_pending else '#e0f2fe' %}
+                        {% set status_color = '#9a3412' if is_pending else '#0369a1' %}
+                        <span style="background: {{ status_bg }}; color: {{ status_color }}; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                            {{ order.status }}
+                        </span>
+                        
+                        {% if order.status == 'Pending' %}
+                        <a href="/mark-shipped/{{ order.id }}" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">
+                            <i class="fas fa-truck"></i> Ship
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="success-card" style="padding: 5rem 2rem;">
+    <i class="fas fa-clipboard-list fa-4x" style="color: #e2e8f0; margin-bottom: 2rem;"></i>
+    <h2>No orders yet</h2>
+    <p style="color: var(--text-muted);">As soon as a customer places an order, it will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

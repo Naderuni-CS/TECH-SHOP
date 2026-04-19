@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - TechShop ERP{% endblock %}
+
+{% block content %}
+<h1>Complete Your Order 🛒</h1>
+
+<div class="form-container">
+    <form action="/checkout" method="POST">
+        <div class="form-group">
+            <label for="address">Shipping Address</label>
+            <textarea name="address" id="address" class="form-input" rows="4" placeholder="Enter your full address for delivery..." required></textarea>
+        </div>
+
+        <div class="form-group" style="padding: 1rem; background: #f1f5f9; border-radius: 8px; margin-bottom: 2rem;">
+            <p style="font-weight: 600; margin-bottom: 0.5rem;">Estimated Delivery</p>
+            <p style="color: var(--text-muted);"><i class="fas fa-truck"></i> Fast Delivery: Your order will arrive in <strong>3 days</strong>.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+            <i class="fas fa-check-circle"></i> Place Order
+        </button>
+    </form>
+</div>
+{% endblock %}

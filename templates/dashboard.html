@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TechShop ERP{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Welcome back, {{ session.user }}! 👋</h1>
+    <p style="text-align: center; color: var(--text-muted);">Manage your account and view our latest products.</p>
+</div>
+
+<div class="admin-products-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem;">
+    <a href="/products" style="text-decoration: none;">
+        <div class="admin-card">
+            <i class="fas fa-shopping-bag"></i>
+            <h3>Browse Products</h3>
+            <p>Check out our latest laptops and computer accessories.</p>
+        </div>
+    </a>
+
+    <a href="/cart" style="text-decoration: none;">
+        <div class="admin-card">
+            <i class="fas fa-shopping-cart"></i>
+            <h3>My Cart</h3>
+            <p>View items you've added and proceed to checkout.</p>
+        </div>
+    </a>
+</div>
+{% endblock %}

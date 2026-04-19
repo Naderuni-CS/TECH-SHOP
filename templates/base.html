@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Computer Shop{% endblock %}</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-laptop-code"></i> TechShop<span>ERP</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="/products" class="nav-item">Products</a>
+                
+                {% if session.get('user') == 'admin' %}
+                    <a href="/admin" class="nav-item">Admin Panel</a>
+                {% else %}
+                    <a href="/dashboard" class="nav-item">Dashboard</a>
+                    <a href="/order-history" class="nav-item">My Orders</a>
+                    <a href="/cart" class="nav-item cart-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        {% if cart_count > 0 %}
+                            <span class="cart-badge">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+                {% endif %}
+                
+                {% if session.get('user') %}
+                    <a href="/logout" class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+                {% else %}
+                    <a href="/login" class="nav-item login-btn">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 TechShop ERP. Designed for Excellence.</p>
+    </footer>
+
+    <script>
+        // Simple micro-animation for the cart badge
+        document.addEventListener('DOMContentLoaded', () => {
+            const badge = document.querySelector('.cart-badge');
+            if (badge) {
+                badge.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    badge.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    badge.style.transform = 'scale(1)';
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

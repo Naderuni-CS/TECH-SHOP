@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Success - TechShop ERP{% endblock %}
+
+{% block content %}
+<div class="success-card">
+    <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+    </div>
+    <h1>Thanks for Ordering! 🎉</h1>
+    <p style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">
+        We've received your request. Your high-performance tech is being prepared!
+    </p>
+    
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+        <p style="color: #166534; font-weight: 600;">
+            <i class="fas fa-calendar-alt"></i> Estimated Arrival: 3 Days
+        </p>
+    </div>
+
+    <div class="card-buttons" style="justify-content: center;">
+        <a href="/products" class="btn btn-primary">Continue Shopping</a>
+        <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

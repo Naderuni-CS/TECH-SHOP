@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Explore Products - TechShop ERP{% endblock %}
+
+{% block content %}
+<div class="shop-header" style="margin-bottom: 3rem; text-align: center;">
+    <h1>Performance Hardware 💻</h1>
+    <p style="color: var(--text-muted); font-size: 1.1rem;">Premium selection of laptops, accessories, and components.</p>
+</div>
+
+<div class="product-grid">
+    {% for product in products %}
+    <div class="card">
+        <div class="card-img-wrapper">
+            {% if product.image %}
+            <img src="{{ url_for('static', filename=product.image.replace('\\', '/').split('static/')[-1]) }}" alt="{{ product.name }}">
+            {% else %}
+            <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #e2e8f0; color: #94a3b8;">
+                <i class="fas fa-image fa-3x"></i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-body">
+            <span class="card-category">{{ product.category }}</span>
+            <h3 class="card-title">{{ product.name }}</h3>
+            <p class="card-price">{{ "{:,.2f}".format(product.price) }} EGP</p>
+            
+            <div class="card-stock {% if product.quantity <= 5 %}low{% endif %}">
+                <i class="fas fa-warehouse"></i> 
+                {% if product.quantity > 0 %}
+                    Stock: {{ product.quantity }} available
+                {% else %}
+                    <span style="color: var(--accent-red);">Out of Stock</span>
+                {% endif %}
+            </div>
+
+            <div class="card-buttons">
+                <a href="/product/{{ product.id }}" class="btn btn-outline" style="flex: 1;">Details</a>
+                
+                {% if session.get('user') != 'admin' and product.quantity > 0 %}
+                <a href="/add-to-cart/{{ product.id }}" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-cart-plus"></i> Add
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

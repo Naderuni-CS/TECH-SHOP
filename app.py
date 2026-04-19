@@ -101,5 +101,23 @@ def product_details(id):
     product = db.execute("SELECT * FROM products WHERE id=?", (id,)).fetchone()
     return render_template("product_details.html", product=product)
 
+@app.route("/admin-users")
+def admin_users():
+    if session.get("user") != "admin":
+        return redirect(url_for("login"))
+    
+    db = get_db()
+    search_query = request.args.get("q", "").strip()
+    
+    if search_query:
+        users = db.execute(
+            "SELECT id, username, email, role FROM users WHERE username LIKE ? OR email LIKE ?", 
+            (f"%{search_query}%", f"%{search_query}%")
+        ).fetchall()
+    else:
+        users = db.execute("SELECT id, username, email, role FROM users").fetchall()
+        
+    return render_template("admin_users.html", users=users, search_query=search_query)
+
 if __name__ == "__main__":
     app.run(debug=True)

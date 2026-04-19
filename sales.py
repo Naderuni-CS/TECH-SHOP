@@ -14,6 +14,10 @@ def get_db():
 
 @sales_bp.route("/add-to-cart/<int:id>")
 def add_to_cart(id):
+    if "user" not in session:
+        flash("You must be logged in to add items to your cart. Please sign in or create an account! 🔒", "error")
+        return redirect(url_for("login"))
+
     if session.get("user") == "admin":
         flash("Admins cannot order products.", "error")
         return redirect(url_for("products"))

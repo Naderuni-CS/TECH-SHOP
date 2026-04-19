@@ -15,6 +15,7 @@
                         <th>Product</th>
                         <th>Category</th>
                         <th style="text-align: right;">Price</th>
+                        <th style="text-align: right; width: 60px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -24,6 +25,11 @@
                         <td>{{ item.category }}</td>
                         <td style="text-align: right; color: var(--primary-color); font-weight: 700;">
                             {{ "{:,.2f}".format(item.price) }} EGP
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="/remove-from-cart/{{ item.id }}" class="btn btn-outline" style="padding: 0.4rem 0.6rem; color: var(--accent-red); border-color: #fee2e2; background: #fef2f2;" title="Remove this item">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}

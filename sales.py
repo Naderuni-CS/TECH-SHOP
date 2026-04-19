@@ -37,6 +37,18 @@ def add_to_cart(id):
         
     return redirect(url_for("products"))
 
+@sales_bp.route("/remove-from-cart/<int:id>")
+def remove_from_cart(id):
+    if "user" not in session:
+        return redirect(url_for("login"))
+    
+    if "cart" in session and id in session["cart"]:
+        session["cart"].remove(id)
+        session.modified = True
+        flash("Item removed from cart.", "success")
+        
+    return redirect(url_for("sales.cart"))
+
 @sales_bp.route("/cart")
 def cart():
     if "cart" not in session or len(session["cart"]) == 0:

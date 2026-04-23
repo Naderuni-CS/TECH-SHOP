@@ -1,13 +1,15 @@
-from flask import Flask, render_template, request, redirect, session, url_for, flash, g
+from flask import Flask, request, jsonify, g
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from inventory import inventory_bp
-from sales import sales_bp
+import jwt
+import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
+JWT_SECRET = "jwtsecretkey"
 
-# Database connection management using 'g'
+# ================= DB =================
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect("database.db", timeout=20)
@@ -18,106 +20,194 @@ def get_db():
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop('db', None)
-    if db is not None:
+    if db:
         db.close()
 
-# Register Blueprints
-app.register_blueprint(inventory_bp)
-app.register_blueprint(sales_bp)
+# ================= AUTH =================
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get("Authorization")
 
-@app.context_processor
-def inject_globals():
-    cart_count = len(session.get("cart", []))
-    return dict(cart_count=cart_count)
+        if not token:
+            return jsonify({"error": "Token missing"}), 401
 
-@app.route("/")
-def home():
-    if "user" in session:
-        if session["user"] == "admin":
-            return redirect(url_for("inventory.admin"))
-        return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
-        password = generate_password_hash(request.form["password"])
         try:
-            db = get_db()
-            db.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)", 
-                         (username, email, password, "user"))
-            db.commit()
-            flash("Account created! Please login.", "success")
-            return redirect(url_for("login"))
-        except sqlite3.IntegrityError:
-            flash("Username or Email already exists.", "error")
-    return render_template("register.html")
+            token = token.split(" ")[1]
+            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            request.user = data
+        except:
+            return jsonify({"error": "Invalid token"}), 401
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        return f(*args, **kwargs)
+    return decorated
 
-        if username == "nader" and password == "nader@123":
-            session["user"] = "admin"
-            flash("Logged in to Inventory Subsystem as Admin", "success")
-            return redirect(url_for("inventory.admin"))
 
+def has_permission(user_id, permission):
+    db = get_db()
+
+    result = db.execute("""
+        SELECT p.name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        JOIN role_permissions rp ON r.id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.id
+        WHERE u.id = ? AND p.name = ?
+    """, (user_id, permission)).fetchone()
+
+    return result is not None
+
+
+def require_permission(permission):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            user_id = request.user["id"]
+
+            if not has_permission(user_id, permission):
+                return jsonify({"error": "Permission denied"}), 403
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# ================= AUTH API =================
+
+@app.route("/api/register", methods=["POST"])
+def register():
+    data = request.get_json()
+
+    if not data or not all(k in data for k in ["username", "email", "password"]):
+        return jsonify({"error": "Missing fields"}), 400
+
+    try:
         db = get_db()
-        user = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        db.execute("""
+            INSERT INTO users (username, email, password, role_id)
+            VALUES (?, ?, ?, ?)
+        """, (
+            data["username"],
+            data["email"],
+            generate_password_hash(data["password"]),
+            2
+        ))
+        db.commit()
+        return jsonify({"message": "User registered"}), 201
 
-        if user and check_password_hash(user["password"], password):
-            session["user"] = user["username"]
-            session["user_id"] = user["id"]
-            flash(f"Welcome back to the Sales System, {username}!", "success")
-            return redirect(url_for("dashboard"))
-        else:
-            flash("Invalid Credentials ❌", "error")
-    return render_template("login.html")
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "User already exists"}), 400
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
 
-@app.route("/dashboard")
-def dashboard():
-    if "user" not in session or session["user"] == "admin":
-        return redirect(url_for("login"))
-    return render_template("dashboard.html")
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json()
 
-@app.route("/products")
-def products():
+    if not data or not all(k in data for k in ["username", "password"]):
+        return jsonify({"error": "Missing fields"}), 400
+
+    db = get_db()
+
+    user = db.execute("""
+        SELECT u.*, r.name as role_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE username=?
+    """, (data["username"],)).fetchone()
+
+    if not user or not check_password_hash(user["password"], data["password"]):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    token = jwt.encode({
+        "id": user["id"],
+        "username": user["username"],
+        "role": user["role_name"],
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+    }, JWT_SECRET, algorithm="HS256")
+
+    return jsonify({"token": token})
+
+
+# ================= PRODUCTS =================
+
+@app.route("/api/products", methods=["GET"])
+def get_products():
     db = get_db()
     products = db.execute("SELECT * FROM products").fetchall()
-    return render_template("products.html", products=products)
+    return jsonify([dict(p) for p in products])
 
-@app.route("/product/<int:id>")
-def product_details(id):
+
+@app.route("/api/products/<int:id>", methods=["GET"])
+def get_product(id):
     db = get_db()
     product = db.execute("SELECT * FROM products WHERE id=?", (id,)).fetchone()
-    return render_template("product_details.html", product=product)
 
-@app.route("/admin-users")
-def admin_users():
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
-    
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+
+    return jsonify(dict(product))
+
+
+# ================= ADMIN =================
+
+@app.route("/api/add-product", methods=["POST"])
+@token_required
+@require_permission("add_product")
+def add_product():
+    data = request.get_json()
+
+    if not data or not all(k in data for k in ["name", "price", "quantity"]):
+        return jsonify({"error": "Missing fields"}), 400
+
     db = get_db()
-    search_query = request.args.get("q", "").strip()
-    
-    if search_query:
-        users = db.execute(
-            "SELECT id, username, email, role FROM users WHERE username LIKE ? OR email LIKE ?", 
-            (f"%{search_query}%", f"%{search_query}%")
-        ).fetchall()
-    else:
-        users = db.execute("SELECT id, username, email, role FROM users").fetchall()
-        
-    return render_template("admin_users.html", users=users, search_query=search_query)
+    db.execute("""
+        INSERT INTO products (name, category, price, quantity)
+        VALUES (?, ?, ?, ?)
+    """, (
+        data["name"],
+        data.get("category", ""),
+        data["price"],
+        data["quantity"]
+    ))
+    db.commit()
 
+    return jsonify({"message": "Product added"}), 201
+
+
+@app.route("/api/delete-product/<int:id>", methods=["DELETE"])
+@token_required
+@require_permission("delete_product")
+def delete_product(id):
+    db = get_db()
+    db.execute("DELETE FROM products WHERE id=?", (id,))
+    db.commit()
+
+    return jsonify({"message": "Deleted"})
+
+
+@app.route("/api/update-product/<int:id>", methods=["PUT"])
+@token_required
+@require_permission("add_product")
+def update_product(id):
+    data = request.get_json()
+
+    db = get_db()
+    db.execute("""
+        UPDATE products
+        SET name=?, category=?, price=?, quantity=?
+        WHERE id=?
+    """, (
+        data["name"],
+        data.get("category", ""),
+        data["price"],
+        data["quantity"],
+        id
+    ))
+    db.commit()
+
+    return jsonify({"message": "Updated"})
+
+
+# ================= RUN =================
 if __name__ == "__main__":
     app.run(debug=True)

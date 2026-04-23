@@ -318,6 +318,48 @@ def admin_users():
     return render_template("admin_users.html", users=users, search_query=search_query)
 
 
+@app.route("/admin/delete-user/<int:id>", methods=["POST"])
+def delete_user(id):
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
+
+    # Prevent admin from deleting their own account
+    if session.get("user_id") == id:
+        flash("You cannot delete your own account.", "error")
+        return redirect(url_for("admin_users"))
+
+    db = get_db()
+    db.execute("DELETE FROM users WHERE id=?", (id,))
+    db.commit()
+    flash("User removed successfully.", "success")
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/change-role/<int:id>", methods=["POST"])
+def change_role(id):
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
+
+    # Prevent admin from changing their own role
+    if session.get("user_id") == id:
+        flash("You cannot change your own role.", "error")
+        return redirect(url_for("admin_users"))
+
+    new_role = request.form.get("role")
+    db = get_db()
+
+    # Get role_id from role name
+    role_row = db.execute("SELECT id FROM roles WHERE name=?", (new_role,)).fetchone()
+    if not role_row:
+        flash("Invalid role selected.", "error")
+        return redirect(url_for("admin_users"))
+
+    db.execute("UPDATE users SET role_id=? WHERE id=?", (role_row["id"], id))
+    db.commit()
+    flash(f"User role updated to '{new_role}' successfully.", "success")
+    return redirect(url_for("admin_users"))
+
+
 @app.route("/logout")
 def logout():
     session.clear()

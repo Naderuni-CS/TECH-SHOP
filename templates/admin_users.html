@@ -6,7 +6,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
     <div>
         <h1>Manage Users 👥</h1>
-        <p style="color: var(--text-muted);">View registered accounts and search for specific customers.</p>
+        <p style="color: var(--text-muted);">View, manage roles, and remove registered accounts.</p>
     </div>
     <a href="/admin" class="btn btn-outline">
         <i class="fas fa-arrow-left"></i> Back to Admin
@@ -36,7 +36,8 @@
                 <th>User ID</th>
                 <th>Username</th>
                 <th>Email Address</th>
-                <th style="text-align: right;">Role</th>
+                <th>Role</th>
+                <th style="text-align: right;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -45,13 +46,40 @@
                 <td style="color: var(--text-muted);">#USR-{{ user.id }}</td>
                 <td style="font-weight: 600;">{{ user.username }}</td>
                 <td>{{ user.email }}</td>
-                <td style="text-align: right;">
+                <td>
                     {% set is_admin = user.role == 'admin' %}
                     {% set role_bg = '#fef2f2' if is_admin else '#f1f5f9' %}
                     {% set role_color = '#991b1b' if is_admin else '#475569' %}
                     <span style="display: inline-block; background: {{ role_bg }}; color: {{ role_color }}; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
                         {{ user.role | title }}
                     </span>
+                </td>
+                <td style="text-align: right;">
+                    {% if session.get('user_id') != user.id %}
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+
+                        <!-- Change Role Form -->
+                        <form action="/admin/change-role/{{ user.id }}" method="POST" style="display: flex; gap: 0.3rem; align-items: center;">
+                            <select name="role" style="padding: 0.35rem 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; font-family: inherit; background: white; cursor: pointer;">
+                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; color: var(--primary-color);" title="Save Role">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </form>
+
+                        <!-- Delete User Form -->
+                        <form action="/admin/delete-user/{{ user.id }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete {{ user.username }}?')">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;" title="Delete User">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+
+                    </div>
+                    {% else %}
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">You (current admin)</span>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

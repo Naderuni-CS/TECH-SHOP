@@ -323,15 +323,25 @@ def delete_user(id):
     if session.get("role") != "admin":
         return redirect(url_for("web_login"))
 
-    # Prevent admin from deleting their own account
     if session.get("user_id") == id:
         flash("You cannot delete your own account.", "error")
         return redirect(url_for("admin_users"))
 
     db = get_db()
+
+    # Delete order_items → orders → user (to satisfy FK constraints)
+    order_ids = [row["id"] for row in db.execute(
+        "SELECT id FROM orders WHERE user_id=?", (id,)
+    ).fetchall()]
+
+    if order_ids:
+        placeholders = ",".join("?" * len(order_ids))
+        db.execute(f"DELETE FROM order_items WHERE order_id IN ({placeholders})", order_ids)
+        db.execute(f"DELETE FROM orders WHERE id IN ({placeholders})", order_ids)
+
     db.execute("DELETE FROM users WHERE id=?", (id,))
     db.commit()
-    flash("User removed successfully.", "success")
+    flash("User and their orders removed successfully.", "success")
     return redirect(url_for("admin_users"))
 
 

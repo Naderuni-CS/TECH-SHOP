@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, g
+import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import datetime
 from functools import wraps
+from inventory import inventory_bp
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -207,6 +209,14 @@ def update_product(id):
 
     return jsonify({"message": "Updated"})
 
+
+
+
+# 🔥 create DB if not exists (for Render)
+if not os.path.exists("database.db"):
+    with sqlite3.connect("database.db") as db:
+        with open("database.sql") as f:
+            db.executescript(f.read())
 
 # ================= RUN =================
 if __name__ == "__main__":

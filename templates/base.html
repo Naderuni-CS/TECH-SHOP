@@ -21,7 +21,7 @@
             <div class="nav-links">
                 <a href="/products" class="nav-item">Products</a>
                 
-                {% if session.get('user') == 'admin' %}
+                {% if session.get('role') == 'admin' %}
                     <a href="/admin" class="nav-item">Admin Panel</a>
                 {% elif session.get('user') %}
                     <a href="/dashboard" class="nav-item">Dashboard</a>

@@ -13,14 +13,14 @@ def get_db():
 
 @inventory_bp.route("/admin")
 def admin():
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
     return render_template("admin_dashboard.html")
 
 @inventory_bp.route("/admin-products")
 def admin_products():
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
     
     db = get_db()
     products = db.execute("SELECT * FROM products").fetchall()
@@ -28,8 +28,8 @@ def admin_products():
 
 @inventory_bp.route("/add-product", methods=["GET", "POST"])
 def add_product():
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
 
     if request.method == "POST":
         name = request.form["name"]
@@ -39,17 +39,20 @@ def add_product():
         description = request.form["description"]
         image = request.files["image"]
 
-        if image:
-            image_path = os.path.join("static", image.filename)
+        if image and image.filename:
+            filename = image.filename.replace("\\", "/").split("/")[-1]
+            image_path = os.path.join("static", filename)
             image.save(image_path)
+            image_db_path = filename  # store just filename, url_for handles the static prefix
         else:
             image_path = ""
+            image_db_path = ""
 
         db = get_db()
         db.execute("""
             INSERT INTO products (name, category, price, quantity, image, description)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (name, category, price, quantity, image_path, description))
+        """, (name, category, price, quantity, image_db_path, description))
         db.commit()
         flash("Product added successfully to Inventory!", "success")
         return redirect(url_for("inventory.admin_products"))
@@ -58,8 +61,8 @@ def add_product():
 
 @inventory_bp.route("/delete-product/<int:id>")
 def delete_product(id):
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
         
     db = get_db()
     db.execute("DELETE FROM products WHERE id=?", (id,))
@@ -69,8 +72,8 @@ def delete_product(id):
 
 @inventory_bp.route("/view-orders")
 def view_orders():
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
     
     db = get_db()
     # Fetch orders with username
@@ -84,8 +87,8 @@ def view_orders():
 
 @inventory_bp.route("/mark-shipped/<int:id>")
 def mark_shipped(id):
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
     
     db = get_db()
     db.execute("UPDATE orders SET status = 'Shipped' WHERE id = ?", (id,))
@@ -95,8 +98,8 @@ def mark_shipped(id):
 
 @inventory_bp.route("/restock/<int:id>", methods=["POST"])
 def restock(id):
-    if session.get("user") != "admin":
-        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
     
     amount = int(request.form.get("amount", 0))
     if amount > 0:

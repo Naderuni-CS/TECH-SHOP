@@ -16,9 +16,9 @@ def get_db():
 def add_to_cart(id):
     if "user" not in session:
         flash("You must be logged in to add items to your cart. Please sign in or create an account! 🔒", "error")
-        return redirect(url_for("login"))
+        return redirect(url_for("web_login"))
 
-    if session.get("user") == "admin":
+    if session.get("role") == "admin":
         flash("Admins cannot order products.", "error")
         return redirect(url_for("products"))
     
@@ -40,7 +40,7 @@ def add_to_cart(id):
 @sales_bp.route("/remove-from-cart/<int:id>")
 def remove_from_cart(id):
     if "user" not in session:
-        return redirect(url_for("login"))
+        return redirect(url_for("web_login"))
     
     if "cart" in session and id in session["cart"]:
         session["cart"].remove(id)
@@ -67,7 +67,7 @@ def cart():
 
 @sales_bp.route("/checkout", methods=["GET", "POST"])
 def checkout():
-    if session.get("user") == "admin":
+    if session.get("role") == "admin":
         return redirect(url_for("home"))
     
     if "cart" not in session or not session["cart"]:
@@ -123,8 +123,8 @@ def thank_you():
 
 @sales_bp.route("/order-history")
 def order_history():
-    if "user" not in session or session.get("user") == "admin":
-        return redirect(url_for("login"))
+    if "user" not in session or session.get("role") == "admin":
+        return redirect(url_for("web_login"))
     
     user_id = session.get("user_id")
     db = get_db()

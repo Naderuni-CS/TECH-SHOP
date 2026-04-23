@@ -13,7 +13,7 @@
     <div class="card">
         <div class="card-img-wrapper">
             {% if product.image %}
-            <img src="{{ url_for('static', filename=product.image.replace('\\', '/').split('static/')[-1]) }}" alt="{{ product.name }}">
+            <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
             {% else %}
             <div style="height: 100%; display: flex; align-items: center; justify-content: center; background: #e2e8f0; color: #94a3b8;">
                 <i class="fas fa-image fa-3x"></i>
@@ -38,7 +38,7 @@
             <div class="card-buttons">
                 <a href="/product/{{ product.id }}" class="btn btn-outline" style="flex: 1;">Details</a>
                 
-                {% if session.get('user') != 'admin' and product.quantity > 0 %}
+                {% if session.get('role') != 'admin' and product.quantity > 0 %}
                 <a href="/add-to-cart/{{ product.id }}" class="btn btn-primary" style="flex: 1;">
                     <i class="fas fa-cart-plus"></i> Add
                 </a>

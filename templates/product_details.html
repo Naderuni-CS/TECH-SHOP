@@ -7,7 +7,7 @@
     <div class="product-image-section">
         {% if product.image %}
         <div style="background: white; padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow);">
-            <img src="{{ url_for('static', filename=product.image.replace('\\', '/').split('static/')[-1]) }}" 
+            <img src="{{ url_for('static', filename=product.image) }}" 
                  alt="{{ product.name }}" 
                  style="width: 100%; height: auto; border-radius: 8px;">
         </div>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="action-buttons" style="display: flex; gap: 1rem;">
-            {% if session.get('user') != 'admin' and product.quantity > 0 %}
+            {% if session.get('role') != 'admin' and product.quantity > 0 %}
             <a href="/add-to-cart/{{ product.id }}" class="btn btn-primary" style="flex: 2; padding: 1.25rem;">
                 <i class="fas fa-cart-plus"></i> Add to Cart
             </a>

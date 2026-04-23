@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, render_template, redirect, url_for, flash, session
 import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,6 +6,7 @@ import jwt
 import datetime
 from functools import wraps
 from inventory import inventory_bp
+from sales import sales_bp
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -158,9 +159,6 @@ def get_product(id):
 def add_product():
     data = request.get_json()
 
-    if not data or not all(k in data for k in ["name", "price", "quantity"]):
-        return jsonify({"error": "Missing fields"}), 400
-
     db = get_db()
     db.execute("""
         INSERT INTO products (name, category, price, quantity)
@@ -210,14 +208,127 @@ def update_product(id):
     return jsonify({"message": "Updated"})
 
 
+# ================= FRONTEND =================
+
+app.register_blueprint(inventory_bp)
+app.register_blueprint(sales_bp)
+
+@app.context_processor
+def inject_globals():
+    cart_count = len(session.get("cart", []))
+    return dict(cart_count=cart_count)
+
+@app.route("/")
+def home():
+    if "user" in session:
+        if session.get("role") == "admin":
+            return redirect(url_for("inventory.admin"))
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("web_login"))
 
 
-# 🔥 create DB if not exists (for Render)
+@app.route("/login", methods=["GET", "POST"])
+def web_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        db = get_db()
+        user = db.execute("""
+            SELECT u.*, r.name as role_name 
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE username=?
+        """, (username,)).fetchone()
+
+        if user and check_password_hash(user["password"], password):
+            session["user"] = user["username"]
+            session["user_id"] = user["id"]
+            session["role"] = user["role_name"]
+
+            if user["role_name"] == "admin":
+                return redirect(url_for("inventory.admin"))
+            return redirect(url_for("dashboard"))
+
+    return render_template("login.html")
+
+
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session or session.get("role") == "admin":
+        return redirect(url_for("web_login"))
+    return render_template("dashboard.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def web_register():
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        password = generate_password_hash(request.form["password"])
+        try:
+            db = get_db()
+            db.execute("INSERT INTO users (username, email, password, role_id) VALUES (?, ?, ?, ?)", 
+                         (username, email, password, 2))
+            db.commit()
+            flash("Account created! Please login.", "success")
+            return redirect(url_for("web_login"))
+        except sqlite3.IntegrityError:
+            flash("Username or Email already exists.", "error")
+    return render_template("register.html")
+
+
+@app.route("/products")
+def products():
+    db = get_db()
+    products_list = db.execute("SELECT * FROM products").fetchall()
+    return render_template("products.html", products=products_list)
+
+
+@app.route("/product/<int:id>")
+def product_details(id):
+    db = get_db()
+    product = db.execute("SELECT * FROM products WHERE id=?", (id,)).fetchone()
+    return render_template("product_details.html", product=product)
+
+
+@app.route("/admin-users")
+def admin_users():
+    if session.get("role") != "admin":
+        return redirect(url_for("web_login"))
+    
+    db = get_db()
+    search_query = request.args.get("q", "").strip()
+    
+    if search_query:
+        users = db.execute(
+            """SELECT u.id, u.username, u.email, r.name as role 
+               FROM users u 
+               JOIN roles r ON u.role_id = r.id 
+               WHERE u.username LIKE ? OR u.email LIKE ?""", 
+            (f"%{search_query}%", f"%{search_query}%")
+        ).fetchall()
+    else:
+        users = db.execute(
+            """SELECT u.id, u.username, u.email, r.name as role 
+               FROM users u 
+               JOIN roles r ON u.role_id = r.id"""
+        ).fetchall()
+        
+    return render_template("admin_users.html", users=users, search_query=search_query)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("web_login"))
+
+
+# ================= INIT DB =================
 if not os.path.exists("database.db"):
     with sqlite3.connect("database.db") as db:
         with open("database.sql") as f:
             db.executescript(f.read())
 
-# ================= RUN =================
 if __name__ == "__main__":
     app.run(debug=True)

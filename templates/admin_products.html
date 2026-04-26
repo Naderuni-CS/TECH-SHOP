@@ -25,7 +25,7 @@
         <tbody>
             {% for product in products %}
             <tr>
-                <td>#{{ product.id }}</td>
+                <td>#{{ loop.index }}</td>
                 <td style="font-weight: 600;">{{ product.name }}</td>
                 <td>{{ product.category }}</td>
                 <td style="color: var(--primary-color); font-weight: 700;">{{ "{:,.2f}".format(product.price) }} EGP</td>

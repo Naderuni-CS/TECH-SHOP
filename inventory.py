@@ -65,6 +65,8 @@ def delete_product(id):
         return redirect(url_for("web_login"))
         
     db = get_db()
+    # Remove order_items that reference this product first (FK constraint)
+    db.execute("DELETE FROM order_items WHERE product_id=?", (id,))
     db.execute("DELETE FROM products WHERE id=?", (id,))
     db.commit()
     flash("Product removed from Inventory.", "success")
